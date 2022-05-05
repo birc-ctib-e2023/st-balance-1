@@ -15,7 +15,7 @@ from typing import (
 class Ordered(Protocol):
     """Types that support < comparison."""
 
-    def __lt__(self, other: Any) -> bool:
+    def __lt__(self: Ord, other: Ord) -> bool:
         """Determine if self is < other."""
         ...
 
@@ -99,24 +99,11 @@ class InnerNode(Generic[Ord]):
 
     def __str__(self) -> str:
         """Return textual representation."""
-        return f"({self.left}, {self.value}, {self.right})"
+        return f"({self.left}, {self.value}[{self.height}], {self.right})"
 
 
 # A Tree is either an inner node or an empty tree
 Tree = Union[InnerNode[Ord], EmptyClass]
-
-
-def is_node_balanced(n: Tree[Ord]) -> bool:
-    """Check that the height difference of children is less than two."""
-    return abs(n.left.height - n.right.height) < 2
-
-
-def is_tree_balanced(n: Tree[Ord]) -> bool:
-    """Check all nodes in a tree is balanced."""
-    if n is Empty:
-        return True
-    return is_node_balanced(n) and \
-        is_tree_balanced(n.left) and is_tree_balanced(n.right)
 
 
 def rot_left(n: Tree[Ord]) -> Tree[Ord]:
@@ -142,6 +129,19 @@ def balance(n: Tree[Ord]) -> Tree[Ord]:
     return n
 
 
+def contains(t: Tree[Ord], val: Ord) -> bool:
+    """Test if val is in t."""
+    while True:
+        if t is Empty:
+            return False
+        if t.value == val:
+            return True
+        if val < t.value:
+            t = t.left
+        else:
+            t = t.right
+
+
 def insert(t: Tree[Ord], val: Ord) -> Tree[Ord]:
     """Insert val into t."""
     if t is Empty:
@@ -153,9 +153,28 @@ def insert(t: Tree[Ord], val: Ord) -> Tree[Ord]:
     return t
 
 
-t = Empty
-for i in range(5):
-    t = insert(t, i)
-print(t)
-print(is_tree_balanced(t))
-print(t.height, t.left.height, t.right.height)
+def rightmost(t: Tree[Ord]) -> Ord:
+    """Get the rightmost value in t."""
+    assert t is not Empty
+    while t.right is not Empty:
+        t = t.right
+    return t.value
+
+
+def remove(t: Tree[Ord], val: Ord) -> Tree[Ord]:
+    """Remove val from t."""
+    if t is Empty:
+        return Empty
+
+    if val < t.value:
+        return balance(InnerNode(t.value, remove(t.left, val), t.right))
+    if val > t.value:
+        return balance(InnerNode(t.value, t.left, remove(t.right, val)))
+
+    if t.left is Empty:
+        return t.right
+    if t.right is Empty:
+        return t.left
+
+    x = rightmost(t.left)
+    return balance(InnerNode(x, remove(t.left, x), t.right))
