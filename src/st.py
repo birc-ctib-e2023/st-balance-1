@@ -110,6 +110,9 @@ def rot_left(n: Tree[Ord]) -> Tree[Ord]:
     """Rotate n left."""
     x, y = n.value, n.right.value
     a, b, c = n.left, n.right.left, n.right.right
+    if a.height > b.height:  # inner heavy
+        print("inner rot")
+        return rot_left(InnerNode(x, n.left, rot_right(n.right)))
     return InnerNode(y, InnerNode(x, a, b), c)
 
 
@@ -117,15 +120,24 @@ def rot_right(n: Tree[Ord]) -> Tree[Ord]:
     """Rotate n right."""
     x, y = n.value, n.left.value
     a, b, c = n.left.left, n.left.right, n.right
+    if b.height > a.height:  # inner heavy
+        print("inner rot")
+        return rot_right(InnerNode(x, rot_left(n.left), n.right))
     return InnerNode(y, a, InnerNode(x, b, c))
 
 
 def balance(n: Tree[Ord]) -> Tree[Ord]:
     """Return a balanced node for n."""
+    print('balance', n, '->', end=' ')
     if n.left.height < n.right.height - 1:
-        return rot_left(n)
+        # return rot_left(n)
+        print('L', end=' ')
+        n = rot_left(n)
     if n.right.height < n.left.height - 1:
-        return rot_right(n)
+        # return rot_right(n)
+        print('R', end=' ')
+        n = rot_right(n)
+    print(n)
     return n
 
 
