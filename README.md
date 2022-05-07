@@ -1,4 +1,4 @@
-# Balancing search trees -- 1
+# Balancing search trees -- Persistent
 
 The trick to getting `O(log n)` operations on a binary search tree is to keep the tree balanced, which means that from the root to any leaf, you have the same length. This strict level of ballanced is rarely possible, you can only achieve it if `n` is a power of two, but the best you can achive is that for any node, the longest path to a leaf in one sub-tree is at most one longer than the longest path to a leaf in the other sub-tree.
 
