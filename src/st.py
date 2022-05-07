@@ -1,11 +1,15 @@
 """A balanced search tree."""
 
 from __future__ import annotations
+from abc import (
+    ABC,
+    abstractmethod
+)
 from dataclasses import (
     dataclass, field
 )
 from typing import (
-    Protocol, TypeVar, Generic, Union,
+    Protocol, TypeVar, Generic,
     Optional,
     Any
 )
@@ -25,7 +29,40 @@ Ord = TypeVar('Ord', bound=Ordered)
 # Tree structure
 
 
-class EmptyClass(Generic[Ord]):
+class Tree(Generic[Ord], ABC):
+    """Abstract tree."""
+
+    @property
+    @abstractmethod
+    def value(self) -> Ord:
+        """Get the value in the root of the tree."""
+        ...
+
+    @property
+    @abstractmethod
+    def height(self) -> int:
+        """Get the height of the tree."""
+        ...
+
+    @property
+    @abstractmethod
+    def left(self) -> Tree[Ord]:
+        """Get the left sub-tree."""
+        ...
+
+    @property
+    @abstractmethod
+    def right(self) -> Tree[Ord]:
+        """Get the right sub-tree."""
+        ...
+
+    @property
+    def bf(self) -> int:
+        """Get the balance factor."""
+        return self.right.height - self.left.height
+
+
+class EmptyClass(Tree[Ord]):
     """Empty tree."""
 
     # This is some magick to ensure we never have more
@@ -76,7 +113,7 @@ Empty = EmptyClass()
 
 
 @dataclass(frozen=True)
-class InnerNode(Generic[Ord]):
+class InnerNode(Tree[Ord]):
     """
     Inner node in the search tree.
 
@@ -85,34 +122,47 @@ class InnerNode(Generic[Ord]):
     make new trees that potentially share with existing trees.
     """
 
-    value: Ord
-    left: Tree[Ord] = Empty
-    right: Tree[Ord] = Empty
-    height: int = field(init=False)  # Don't set in init, fix in post_init.
+    _value: Ord
+    _left: Tree[Ord] = Empty
+    _right: Tree[Ord] = Empty
+    _height: int = field(init=False)  # Don't set in init, fix in post_init.
 
     def __post_init__(self) -> None:
         """Fix consistency after creation."""
         object.__setattr__(
             self,
-            'height', max(self.left.height, self.right.height) + 1
+            '_height', max(self.left.height, self.right.height) + 1
         )
+
+    @property
+    def value(self) -> Ord:
+        """Get the value in the root of the tree."""
+        return self._value
+
+    @property
+    def height(self) -> int:
+        """Get the height of the tree."""
+        return self._height
+
+    @property
+    def left(self) -> Tree[Ord]:
+        """Get the left sub-tree."""
+        return self._left
+
+    @property
+    def right(self) -> Tree[Ord]:
+        """Get the right sub-tree."""
+        return self._right
 
     def __str__(self) -> str:
         """Return textual representation."""
-        return f"({self.left}, {self.value}[{self.height}], {self.right})"
-
-
-# A Tree is either an inner node or an empty tree
-Tree = Union[InnerNode[Ord], EmptyClass]
+        return f"({self.left}, {self.value}[{self.bf}], {self.right})"
 
 
 def rot_left(n: Tree[Ord]) -> Tree[Ord]:
     """Rotate n left."""
     x, y = n.value, n.right.value
     a, b, c = n.left, n.right.left, n.right.right
-    if a.height > b.height:  # inner heavy
-        print("inner rot")
-        return rot_left(InnerNode(x, n.left, rot_right(n.right)))
     return InnerNode(y, InnerNode(x, a, b), c)
 
 
@@ -120,24 +170,26 @@ def rot_right(n: Tree[Ord]) -> Tree[Ord]:
     """Rotate n right."""
     x, y = n.value, n.left.value
     a, b, c = n.left.left, n.left.right, n.right
-    if b.height > a.height:  # inner heavy
-        print("inner rot")
-        return rot_right(InnerNode(x, rot_left(n.left), n.right))
     return InnerNode(y, a, InnerNode(x, b, c))
 
 
 def balance(n: Tree[Ord]) -> Tree[Ord]:
-    """Return a balanced node for n."""
-    print('balance', n, '->', end=' ')
-    if n.left.height < n.right.height - 1:
-        # return rot_left(n)
-        print('L', end=' ')
+    """Re-organize n to balance it."""
+    # # Simple rotation solution
+    # if n.bf < -2:  # left-heavy
+    #     return rot_right(n)
+    # if n.bf > 2:   # right-heavy
+    #     return rot_left(n)
+    # return n
+    if n.bf == +2 and n.right.bf >= 0:
         n = rot_left(n)
-    if n.right.height < n.left.height - 1:
-        # return rot_right(n)
-        print('R', end=' ')
+    elif n.bf == +2 and n.right.bf == -1:
+        n = rot_left(InnerNode(n.value, n.left, rot_right(n.right)))
+    elif n.bf == -2 and n.left.bf <= 0:
         n = rot_right(n)
-    print(n)
+    elif n.bf == -2 and n.left.bf == +1:
+        n = rot_right(InnerNode(n.value, rot_left(n.left), n.right))
+    assert -2 < n.bf < +2
     return n
 
 
