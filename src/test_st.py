@@ -38,7 +38,6 @@ def test_balanced() -> None:
     t: Tree[int] = Empty
     for a in x:
         t = insert(t, a)
-        print(t)
         assert is_balanced(t)
     for a in x:
         t = remove(t, a)
