@@ -174,9 +174,9 @@ def rot_right(n: Tree[Ord]) -> Tree[Ord]:
 def balance(n: Tree[Ord]) -> Tree[Ord]:
     """Re-organize n to balance it."""
     # Simple rotation solution
-    if n.bf < -2:  # left-heavy
+    if n.bf <= -2:  # left-heavy
         return rot_right(n)
-    if n.bf > 2:   # right-heavy
+    if n.bf >= 2:   # right-heavy
         return rot_left(n)
     return n
 
